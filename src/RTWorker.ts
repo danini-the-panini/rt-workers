@@ -1,6 +1,7 @@
 import Camera from "./Camera"
 import Color from "./Color"
 import IHittable, { DeserializeData, deserializeHittable } from "./IHittable"
+import Interval from "./Interval"
 import Ray from "./Ray"
 import Vec3 from "./Vec3"
 import writeColor from "./writeColor"
@@ -12,7 +13,7 @@ let world: IHittable
 let buffer: SharedArrayBuffer
 
 function rayColor(r: Ray, world: IHittable): Vec3 {
-  let rec = world.hit(r, 0, Infinity)
+  let rec = world.hit(r, new Interval(0, Infinity))
   if (rec) {
     return rec.normal.plus(new Color(1,1,1)).scale(0.5)
   }

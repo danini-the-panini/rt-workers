@@ -1,11 +1,12 @@
 import IHittable, { HitRecord } from "./IHittable";
+import Interval from "./Interval";
 import Ray from "./Ray";
 import Vec3 from "./Vec3";
 
 export default class Sphere implements IHittable {
   constructor(public center: Vec3, public radius: number) {}
 
-  hit(r: Ray, rayTMin: number, rayTMax: number): HitRecord | null {
+  hit(r: Ray, rayT: Interval): HitRecord | null {
     const oc = r.origin.minus(this.center)
     const a = r.direction.lengthSquared
     const halfB = oc.dot(r.direction)
@@ -17,9 +18,9 @@ export default class Sphere implements IHittable {
 
     // Find the nearest root that lies in the acceptable range
     let root = (-halfB - sqrtd) / a
-    if (root <= rayTMin || rayTMax <= root) {
+    if (!rayT.surrounds(root)) {
       root = (-halfB + sqrtd) / a
-      if (root <= rayTMin || rayTMax <= root) return null
+      if (!rayT.surrounds(root)) return null
     }
 
     const p = r.at(root)

@@ -1,4 +1,5 @@
 import HittableList from "./HittableList"
+import Interval from "./Interval"
 import Ray from "./Ray"
 import Sphere from "./Sphere"
 import Vec3 from "./Vec3"
@@ -25,6 +26,6 @@ export function deserializeHittable(data: DeserializeData): IHittable {
 }
 
 export default interface IHittable {
-  hit(r: Ray, rayTMin: number, rayTMax: number): HitRecord | null
+  hit(r: Ray, rayT: Interval): HitRecord | null
   serialize: any
 }

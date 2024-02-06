@@ -1,4 +1,5 @@
 import IHittable, { HitRecord, deserializeHittable } from "./IHittable";
+import Interval from "./Interval";
 import Ray from "./Ray";
 
 export default class HittableList implements IHittable {
@@ -12,12 +13,12 @@ export default class HittableList implements IHittable {
     this.objects.push(object)
   }
 
-  hit(r: Ray, rayTMin: number, rayTMax: number): HitRecord | null {
+  hit(r: Ray, rayT: Interval): HitRecord | null {
     let rec: HitRecord | null = null
-    let closestSoFar = rayTMax
+    let closestSoFar = rayT.max
 
     this.objects.forEach(object => {
-      let tempRec = object.hit(r, rayTMin, closestSoFar)
+      let tempRec = object.hit(r, new Interval(rayT.min, closestSoFar))
       if (tempRec) {
         closestSoFar = tempRec.t
         rec = tempRec
