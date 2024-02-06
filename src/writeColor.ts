@@ -1,9 +1,18 @@
 import Interval from "./Interval"
 import Vec3 from "./Vec3"
 
+function linearToGamma(linearComponent: number) {
+  return Math.sqrt(linearComponent)
+}
+
 export default function writeColor(data: Uint8ClampedArray, width: number, x: number, y: number, color: Vec3, samplesPerPixel: number) {
   // Divide the color by the number of samples.
   color.shrink(samplesPerPixel)
+
+  // Apply the linear to gamma transform.
+  color.x = linearToGamma(color.x)
+  color.y = linearToGamma(color.y)
+  color.z = linearToGamma(color.z)
 
   const intensity = new Interval(0.000, 0.999)
 
