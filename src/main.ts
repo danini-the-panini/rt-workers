@@ -2,6 +2,8 @@ import './style.css'
 import RTWorker from './RTWorker?worker'
 import Deferred from './Deferred'
 import WorkerHelper from './WorkerHelper'
+import Camera from './Camera'
+import Vec3 from './Vec3'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -10,7 +12,12 @@ const progress = document.getElementById('progress') as HTMLProgressElement
 
 const width = canvas.width
 const height = canvas.height
+
+const camera = new Camera(1.0, 2.0, width, height, new Vec3(0, 0, 0))
+
 const imageByteSize = width * height * 4
+
+progress.max = height
 
 const buffer = new SharedArrayBuffer(imageByteSize)
 
@@ -23,7 +30,7 @@ for (let i = 0; i < cpus; i++) {
 }
 
 await Promise.all(workers.map(async w => {
-  await w.postMessage('start', width, height, buffer)
+  await w.postMessage('start', camera.serialize, buffer)
 }))
 
 let y = 0

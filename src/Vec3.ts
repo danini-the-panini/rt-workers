@@ -25,12 +25,21 @@ export default class Vec3 {
     return this.div(this.length)
   }
 
-  get neg() { return new Vec3(-this.e[0], -this.e[1], -this.e[2]) }
+  get neg() {
+    return new Vec3(-this.e[0], -this.e[1], -this.e[2])
+  }
   
   add(v: Vec3) {
     this.x += v.x
     this.y += v.y
     this.z += v.z
+    return this
+  }
+
+  sub(v: Vec3) {
+    this.x -= v.x
+    this.y -= v.y
+    this.z -= v.z
     return this
   }
 
@@ -76,5 +85,13 @@ export default class Vec3 {
       this.z * v.x - this.x * v.z,
       this.x * v.y - this.y * v.x
     )
+  }
+
+  get serialize() {
+    return this.e
+  }
+
+  static deserialize(e: [number, number, number]) {
+    return new Vec3(...e)
   }
 }
