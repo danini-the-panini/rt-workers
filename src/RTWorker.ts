@@ -9,7 +9,9 @@ const functions: Record<string, Function> = {
     buffer = b
   },
 
-  render(y: number) {
+  async render(y: number) {
+    await new Promise(r => setTimeout(r, 100) )
+
     const data = new Uint8ClampedArray(buffer, y * width * 4, width * 4)
 
     for (let x = 0; x < width; x++) {
