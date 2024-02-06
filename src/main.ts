@@ -15,7 +15,7 @@ const progress = document.getElementById('progress') as HTMLProgressElement
 const width = canvas.width
 const height = canvas.height
 
-const camera = new Camera(width, height)
+const camera = new Camera(width, height, { samplesPerPixel: 100 })
 
 const world = new HittableList()
 world.add(new Sphere(new Vec3(0,0,-1), 0.5))

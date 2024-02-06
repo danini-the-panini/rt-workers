@@ -5,20 +5,39 @@ import Ray from "./Ray";
 import Vec3 from "./Vec3";
 import writeColor from "./writeColor";
 
+type CameraOptions = {
+  focalLength?: number,
+  height?: number,
+  center?: Vec3,
+  samplesPerPixel?: number
+}
+
 export default class Camera {
   width: number
   deltaU: Vec3
   deltaV: Vec3
   upperLeft: Vec3
   pixelZero: Vec3
+  focalLength: number
+  height: number
+  center: Vec3
+  samplesPerPixel: number
 
   constructor(
     public imageWidth: number,
     public imageHeight: number,
-    public focalLength: number = 1.0,
-    public height: number = 2.0,
-    public center: Vec3 = new Vec3(0, 0, 0)
+    {
+      focalLength = 1.0,
+      height = 2.0,
+      center = new Vec3(0, 0, 0),
+      samplesPerPixel = 10
+    } : CameraOptions = {}
   ) {
+    this.focalLength = focalLength
+    this.height = height
+    this.center = center
+    this.samplesPerPixel = samplesPerPixel
+
     this.width = this.height * (this.imageWidth / this.imageHeight)
 
     const u = new Vec3(this.width, 0, 0)
@@ -36,12 +55,12 @@ export default class Camera {
     const data = new Uint8ClampedArray(buffer, y * this.imageWidth * 4, this.imageWidth * 4)
 
     for (let x = 0; x < this.imageWidth; x++) {
-      const pixelCenter = this.pixelZero.plus(this.deltaU.times(x)).add(this.deltaV.times(y))
-      const rayDirection = pixelCenter.minus(this.center)
-      const r = new Ray(this.center, rayDirection)
-
-      const pixelColor = this.rayColor(r, world)
-      writeColor(data, this.imageWidth, x, 0, pixelColor)
+      const pixelColor = new Color(0, 0, 0)
+      for (let sample = 0; sample < this.samplesPerPixel; sample++) {
+        const r = this.getRay(x, y)
+        pixelColor.add(this.rayColor(r, world))
+      }
+      writeColor(data, this.imageWidth, x, 0, pixelColor, this.samplesPerPixel)
     }
   }
 
@@ -56,13 +75,34 @@ export default class Camera {
     return new Color(1.0, 1.0, 1.0).scale(1.0-a).add(new Color(0.5, 0.7, 1.0).scale(a))
   }
 
+  getRay(x: number, y: number) {
+    // Get a randomly sampled camera ray for the pixel at location x,y.
+
+    const pixelCenter = this.pixelZero.plus(this.deltaU.times(x)).add(this.deltaV.times(y))
+    const pixelSample = pixelCenter.add(this.pixelSampleSquare())
+
+    return new Ray(
+      this.center,
+      pixelSample.sub(this.center)
+    )
+  }
+
+  pixelSampleSquare() {
+    // Returns a random point in the square surrounding a pixel at the origin.
+
+    const px = -0.5 + Math.random()
+    const py = -0.5 + Math.random()
+    return this.deltaU.times(px).add(this.deltaV.times(py))
+  }
+
   get serialize() {
     return {
       imageWidth: this.imageWidth,
       imageHeight: this.imageHeight,
       focalLength: this.focalLength,
       height: this.height,
-      center: this.center.serialize
+      center: this.center.serialize,
+      samplesPerPixel: this.samplesPerPixel
     }
   }
 
@@ -71,8 +111,9 @@ export default class Camera {
     imageHeight,
     focalLength,
     height,
-    center
+    center,
+    samplesPerPixel
   }: typeof Camera.prototype.serialize) {
-    return new Camera(imageWidth, imageHeight, focalLength, height, Vec3.deserialize(center))
+    return new Camera(imageWidth, imageHeight, { focalLength, height, center: Vec3.deserialize(center), samplesPerPixel })
   }
 }
