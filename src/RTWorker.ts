@@ -9,17 +9,26 @@ let height: number
 let camera: Camera
 let buffer: SharedArrayBuffer
 
-function hitSphere(center: Vec3, radius: number, r: Ray): boolean {
+function hitSphere(center: Vec3, radius: number, r: Ray): number {
   const oc = r.origin.minus(center)
   const a = r.direction.lengthSquared
-  const b = 2.0 * oc.dot(r.direction)
+  const half_b = oc.dot(r.direction)
   const c = oc.lengthSquared - radius*radius
-  const discriminant = b*b - 4*a*c
-  return discriminant >= 0
+  const discriminant = half_b*half_b - a*c
+
+  if (discriminant < 0) {
+    return -1.0
+  } else {
+    return (-half_b - Math.sqrt(discriminant)) / a
+  }
 }
 
 function rayColor(r: Ray) {
-  if (hitSphere(new Vec3(0, 0, -1), 0.5, r)) return new Color(1, 0, 0)
+  const t = hitSphere(new Vec3(0, 0, -1), 0.5, r)
+  if (t > 0.0) {
+    const n = r.at(t).sub(new Vec3(0,0,-1)).unit
+    return new Color(n.x+1, n.y+1, n.z+1).scale(0.5)
+  }
 
   const unitDirection = r.direction.unit
   const a = 0.5*(unitDirection.y + 1.0)
