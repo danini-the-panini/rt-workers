@@ -9,6 +9,7 @@ import Sphere from './Sphere'
 import Lambertian from './Lambertian'
 import Color from './Color'
 import Metal from './Metal'
+import Dialectric from './Dialectric'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -23,13 +24,14 @@ progress.max = height
 const world = new HittableList()
 
 const materialGround = new Lambertian(new Color(0.8, 0.8, 0.0))
-const materialCenter = new Lambertian(new Color(0.7, 0.3, 0.3))
-const materialLeft = new Metal(new Color(0.8, 0.8, 0.8), 0.3)
+const materialCenter = new Lambertian(new Color(0.1, 0.2, 0.5))
+const materialLeft = new Dialectric(1.5)
 const materialRight = new Metal(new Color(0.8, 0.6, 0.2), 1.0)
 
 world.add(new Sphere(new Vec3( 0.0, -100.5, -1.0), 100.0, materialGround))
 world.add(new Sphere(new Vec3( 0.0,    0.0, -1.0),   0.5, materialCenter))
 world.add(new Sphere(new Vec3(-1.0,    0.0, -1.0),   0.5, materialLeft))
+world.add(new Sphere(new Vec3(-1.0,    0.0, -1.0),  -0.4, materialLeft))
 world.add(new Sphere(new Vec3( 1.0,    0.0, -1.0),   0.5, materialRight))
 
 const camera = new Camera(width, height, { samplesPerPixel: 100, maxDepth: 50 })

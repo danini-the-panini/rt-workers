@@ -110,6 +110,13 @@ export default class Vec3 {
     return this.minus(n.times(2*this.dot(n)))
   }
 
+  refract(n: Vec3, etaiOverEtat: number) {
+    const cosTheta = Math.min(this.neg.dot(n), 1.0)
+    const rOutPerp = n.times(cosTheta).add(this).scale(etaiOverEtat)
+    const rOutParallel = n.times(-Math.sqrt(Math.abs(1.0 - rOutPerp.lengthSquared)))
+    return rOutPerp.add(rOutParallel)
+  }
+
   static random(min: number = 0, max: number = 1) {
     return new Vec3(rand(min, max), rand(min, max), rand(min, max))
   }

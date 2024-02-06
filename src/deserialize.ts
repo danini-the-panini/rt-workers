@@ -1,3 +1,4 @@
+import Dialectric from "./Dialectric"
 import HittableList from "./HittableList"
 import IHittable from "./IHittable"
 import IMaterial from "./IMaterial"
@@ -11,7 +12,8 @@ export type HittableData =
 
 export type MaterialData =
   typeof Lambertian.prototype.serialize |
-  typeof Metal.prototype.serialize
+  typeof Metal.prototype.serialize |
+  typeof Dialectric.prototype.serialize
 
 export function deserializeHittable(data: HittableData): IHittable {
   switch (data.type) {
@@ -24,5 +26,6 @@ export function deserializeMaterial(data: MaterialData): IMaterial {
   switch (data.type) {
     case 'lambertian': return Lambertian.deserialize(data)
     case 'metal': return Metal.deserialize(data)
+    case 'dialectric': return Dialectric.deserialize(data)
   }
 }
