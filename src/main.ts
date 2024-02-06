@@ -23,10 +23,12 @@ progress.max = height
 
 const world = new HittableList()
 
+const R = Math.cos(Math.PI/4)
+
 const materialGround = new Lambertian(new Color(0.8, 0.8, 0.0))
 const materialCenter = new Lambertian(new Color(0.1, 0.2, 0.5))
 const materialLeft = new Dialectric(1.5)
-const materialRight = new Metal(new Color(0.8, 0.6, 0.2), 1.0)
+const materialRight = new Metal(new Color(0.8, 0.6, 0.2), 0.0)
 
 world.add(new Sphere(new Vec3( 0.0, -100.5, -1.0), 100.0, materialGround))
 world.add(new Sphere(new Vec3( 0.0,    0.0, -1.0),   0.5, materialCenter))
@@ -34,7 +36,11 @@ world.add(new Sphere(new Vec3(-1.0,    0.0, -1.0),   0.5, materialLeft))
 world.add(new Sphere(new Vec3(-1.0,    0.0, -1.0),  -0.4, materialLeft))
 world.add(new Sphere(new Vec3( 1.0,    0.0, -1.0),   0.5, materialRight))
 
-const camera = new Camera(width, height, { samplesPerPixel: 100, maxDepth: 50 })
+const camera = new Camera(
+  width, height,
+  new Vec3(-2,2,1), new Vec3(0,0,-1), new Vec3(0,1,0),
+  { samplesPerPixel: 100, maxDepth: 50 }
+)
 
 const imageByteSize = width * height * 4
 const buffer = new SharedArrayBuffer(imageByteSize)

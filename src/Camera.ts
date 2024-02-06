@@ -3,56 +3,67 @@ import IHittable from "./IHittable";
 import Interval from "./Interval";
 import Ray from "./Ray";
 import Vec3 from "./Vec3";
-import { rand } from "./util";
+import { degToRad, rand } from "./util";
 import writeColor from "./writeColor";
 
 type CameraOptions = {
-  focalLength?: number,
-  height?: number,
   center?: Vec3,
   samplesPerPixel?: number,
-  maxDepth?: number
+  maxDepth?: number,
+  vfov?: number
 }
 
 export default class Camera {
-  width: number
   deltaU: Vec3
   deltaV: Vec3
   upperLeft: Vec3
   pixelZero: Vec3
-  focalLength: number
-  height: number
-  center: Vec3
   samplesPerPixel: number
   maxDepth: number
+  vfov: number
+  center: Vec3
+  u: Vec3
+  v: Vec3
+  w: Vec3
 
   constructor(
     public imageWidth: number,
     public imageHeight: number,
+    public lookFrom: Vec3,
+    public lookAt: Vec3,
+    public vup: Vec3,
     {
-      focalLength = 1.0,
-      height = 2.0,
-      center = new Vec3(0, 0, 0),
       samplesPerPixel = 10,
-      maxDepth = 10
+      maxDepth = 10,
+      vfov = 90
     } : CameraOptions = {}
   ) {
-    this.focalLength = focalLength
-    this.height = height
-    this.center = center
     this.samplesPerPixel = samplesPerPixel
     this.maxDepth = maxDepth
+    this.vfov = vfov
+    this.center = lookFrom
 
-    this.width = this.height * (this.imageWidth / this.imageHeight)
+    const look = lookFrom.minus(lookAt)
+    
+    // Determine viewport dimensions.
+    const focalLength = look.length
+    const theta = degToRad(vfov)
+    const h = Math.tan(theta/2)
+    const height = 2 * h * focalLength
+    const width = height * (this.imageWidth / this.imageHeight)
 
-    const u = new Vec3(this.width, 0, 0)
-    const v = new Vec3(0, -this.height, 0)
+    // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+    this.w = look.unit
+    this.u = this.vup.cross(this.w).unit
+    this.v = this.w.cross(this.u)
+
+    const u = this.u.times(width)
+    const v = this.v.neg.scale(height)
     
     this.deltaU = u.div(this.imageWidth)
     this.deltaV = v.div(this.imageHeight)
 
-    this.upperLeft = this.center.minus(
-      new Vec3(0, 0, this.focalLength)).sub(u.div(2)).sub(v.div(2))
+    this.upperLeft = this.center.minus(this.w.times(focalLength)).sub(u.shrink(2)).sub(v.shrink(2))
     this.pixelZero = this.upperLeft.plus(this.deltaU.plus(this.deltaV).scale(0.5))
   }
 
@@ -111,23 +122,29 @@ export default class Camera {
     return {
       imageWidth: this.imageWidth,
       imageHeight: this.imageHeight,
-      focalLength: this.focalLength,
-      height: this.height,
-      center: this.center.serialize,
+      lookFrom: this.lookFrom.serialize,
+      lookAt: this.lookAt.serialize,
+      vup: this.vup.serialize,
       samplesPerPixel: this.samplesPerPixel,
-      maxDepth: this.maxDepth
+      maxDepth: this.maxDepth,
+      vfov: this.vfov
     }
   }
 
   static deserialize({
     imageWidth,
     imageHeight,
-    focalLength,
-    height,
-    center,
+    lookFrom,
+    lookAt,
+    vup,
     samplesPerPixel,
-    maxDepth
+    maxDepth,
+    vfov
   }: typeof Camera.prototype.serialize) {
-    return new Camera(imageWidth, imageHeight, { focalLength, height, center: Vec3.deserialize(center), samplesPerPixel, maxDepth })
+    return new Camera(
+      imageWidth, imageHeight,
+      Vec3.deserialize(lookFrom), Vec3.deserialize(lookAt), Vec3.deserialize(vup),
+      { samplesPerPixel, maxDepth, vfov }
+    )
   }
 }
