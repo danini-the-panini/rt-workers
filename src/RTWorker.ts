@@ -1,5 +1,6 @@
 import Camera from "./Camera"
 import Color from "./Color"
+import IHittable, { DeserializeData, deserializeHittable } from "./IHittable"
 import Ray from "./Ray"
 import Vec3 from "./Vec3"
 import writeColor from "./writeColor"
@@ -7,27 +8,13 @@ import writeColor from "./writeColor"
 let width: number
 let height: number
 let camera: Camera
+let world: IHittable
 let buffer: SharedArrayBuffer
 
-function hitSphere(center: Vec3, radius: number, r: Ray): number {
-  const oc = r.origin.minus(center)
-  const a = r.direction.lengthSquared
-  const half_b = oc.dot(r.direction)
-  const c = oc.lengthSquared - radius*radius
-  const discriminant = half_b*half_b - a*c
-
-  if (discriminant < 0) {
-    return -1.0
-  } else {
-    return (-half_b - Math.sqrt(discriminant)) / a
-  }
-}
-
-function rayColor(r: Ray) {
-  const t = hitSphere(new Vec3(0, 0, -1), 0.5, r)
-  if (t > 0.0) {
-    const n = r.at(t).sub(new Vec3(0,0,-1)).unit
-    return new Color(n.x+1, n.y+1, n.z+1).scale(0.5)
+function rayColor(r: Ray, world: IHittable): Vec3 {
+  let rec = world.hit(r, 0, Infinity)
+  if (rec) {
+    return rec.normal.plus(new Color(1,1,1)).scale(0.5)
   }
 
   const unitDirection = r.direction.unit
@@ -36,10 +23,11 @@ function rayColor(r: Ray) {
 }
 
 const functions: Record<string, Function> = {
-  start(cam: typeof Camera.prototype.serialize, b: SharedArrayBuffer) {
+  start(cam: typeof Camera.prototype.serialize, w: DeserializeData, b: SharedArrayBuffer) {
     camera = Camera.deserialize(cam)
     width = camera.imageWidth
     height = camera.imageHeight
+    world = deserializeHittable(w)
     buffer = b
   },
 
@@ -51,7 +39,7 @@ const functions: Record<string, Function> = {
       const rayDirection = pixelCenter.minus(camera.center)
       const r = new Ray(camera.center, rayDirection)
 
-      const pixelColor = rayColor(r)
+      const pixelColor = rayColor(r, world)
       writeColor(data, width, x, 0, pixelColor)
     }
   }

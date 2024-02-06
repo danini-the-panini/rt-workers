@@ -4,6 +4,8 @@ import Deferred from './Deferred'
 import WorkerHelper from './WorkerHelper'
 import Camera from './Camera'
 import Vec3 from './Vec3'
+import HittableList from './HittableList'
+import Sphere from './Sphere'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -14,6 +16,10 @@ const width = canvas.width
 const height = canvas.height
 
 const camera = new Camera(1.0, 2.0, width, height, new Vec3(0, 0, 0))
+
+const world = new HittableList()
+world.add(new Sphere(new Vec3(0,0,-1), 0.5))
+world.add(new Sphere(new Vec3(0,-100.5,-1), 100))
 
 const imageByteSize = width * height * 4
 
@@ -30,7 +36,7 @@ for (let i = 0; i < cpus; i++) {
 }
 
 await Promise.all(workers.map(async w => {
-  await w.postMessage('start', camera.serialize, buffer)
+  await w.postMessage('start', camera.serialize, world.serialize, buffer)
 }))
 
 let y = 0
