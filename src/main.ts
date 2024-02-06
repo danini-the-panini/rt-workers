@@ -1,24 +1,57 @@
 import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from '/vite.svg'
-import { setupCounter } from './counter.ts'
+import RTWorker from './RTWorker?worker'
+import Deferred from './Deferred'
+import WorkerHelper from './WorkerHelper'
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://www.typescriptlang.org/" target="_blank">
-      <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-    </a>
-    <h1>Vite + TypeScript</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
-    <p class="read-the-docs">
-      Click on the Vite and TypeScript logos to learn more
-    </p>
-  </div>
-`
+const canvas = document.getElementById('canvas') as HTMLCanvasElement
+const ctx = canvas.getContext('2d')!
 
-setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
+const width = canvas.width
+const height = canvas.height
+const imageByteSize = width * height * 4
+
+const buffer = new SharedArrayBuffer(imageByteSize)
+
+const cpus = navigator.hardwareConcurrency
+
+const workers = new Array<WorkerHelper>(cpus)
+
+for (let i = 0; i < cpus; i++) {
+  workers[i] = new WorkerHelper(new RTWorker())
+}
+
+await Promise.all(workers.map(async w => {
+  await w.postMessage('start', width, height, buffer)
+}))
+
+let y = 0
+let done = 0
+const deferred = new Deferred<void>()
+
+function runOnWorker(w: WorkerHelper, i: number) {
+  if (y < height) {
+    const thisY = y
+    y++
+    w.postMessage('render', thisY).then(() => {
+      done++
+      if (done < height) {
+        runOnWorker(w, i)
+      } else {
+        deferred.resolve()
+      }
+    })
+  }
+}
+workers.forEach(runOnWorker)
+await deferred.promise
+
+console.log('putting image data')
+ctx.putImageData(
+  new ImageData(
+    new Uint8ClampedArray(buffer, 0, imageByteSize).slice(),
+    width,
+    height,
+  ),
+  0,
+  0
+)
