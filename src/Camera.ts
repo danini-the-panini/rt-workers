@@ -73,10 +73,13 @@ export default class Camera {
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0) return new Color(0,0,0)
 
-    let rec = world.hit(r, new Interval(0.001, Infinity))
+    const rec = world.hit(r, new Interval(0.001, Infinity))
     if (rec) {
-      const direction = Vec3.randomUnitVector().add(rec.normal)
-      return this.rayColor(new Ray(rec.p, direction), world, depth-1).scale(0.5)
+      const scatter = rec.mat.scatter(r, rec)
+      if (scatter) {
+        return this.rayColor(scatter.scattered, world, depth-1).mul(scatter.attenuation)
+      }
+      return new Color(0,0,0)
     }
   
     const unitDirection = r.direction.unit

@@ -1,6 +1,7 @@
-import IHittable, { HitRecord, deserializeHittable } from "./IHittable";
+import IHittable, { HitRecord } from "./IHittable";
 import Interval from "./Interval";
 import Ray from "./Ray";
+import { deserializeHittable } from "./deserialize";
 
 export default class HittableList implements IHittable {
   constructor(public objects: IHittable[] = []) {}

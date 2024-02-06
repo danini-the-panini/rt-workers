@@ -1,19 +1,15 @@
 import Camera from "./Camera"
-import IHittable, { DeserializeData, deserializeHittable } from "./IHittable"
+import IHittable from "./IHittable"
+import { HittableData, deserializeHittable } from "./deserialize"
 
-let width: number
-let height: number
 let camera: Camera
 let world: IHittable
 let buffer: SharedArrayBuffer
 
-
 const functions: Record<string, Function> = {
-  start(cam: typeof Camera.prototype.serialize, w: DeserializeData, b: SharedArrayBuffer) {
+  start(cam: typeof Camera.prototype.serialize, w: HittableData, b: SharedArrayBuffer) {
     camera = Camera.deserialize(cam)
-    width = camera.imageWidth
-    height = camera.imageHeight
-    world = deserializeHittable(w)
+    world = deserializeHittable(w) as IHittable
     buffer = b
   },
 

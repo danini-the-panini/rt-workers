@@ -30,6 +30,12 @@ export default class Vec3 {
   get neg() {
     return new Vec3(-this.e[0], -this.e[1], -this.e[2])
   }
+
+  get isNearZero() {
+    // Return true if the vector is close to zero in all dimensions.
+    const s = 1e-8;
+    return (Math.abs(this.x) < s) && (Math.abs(this.y) < s) && (Math.abs(this.z) < s);
+  }
   
   add(v: Vec3) {
     this.x += v.x
@@ -42,6 +48,13 @@ export default class Vec3 {
     this.x -= v.x
     this.y -= v.y
     this.z -= v.z
+    return this
+  }
+
+  mul(v: Vec3) {
+    this.x *= v.x
+    this.y *= v.y
+    this.z *= v.z
     return this
   }
 
@@ -71,6 +84,10 @@ export default class Vec3 {
     return new Vec3(this.x * t, this.y * t, this.z * t)
   }
 
+  timesV(v: Vec3) {
+    return new Vec3(this.x * v.x, this.y * v.y, this.z * v.z)
+  }
+
   div(t: number) {
     return new Vec3(this.x / t, this.y / t, this.z / t)
   }
@@ -87,6 +104,10 @@ export default class Vec3 {
       this.z * v.x - this.x * v.z,
       this.x * v.y - this.y * v.x
     )
+  }
+
+  reflect(n: Vec3) {
+    return this.minus(n.times(2*this.dot(n)))
   }
 
   static random(min: number = 0, max: number = 1) {

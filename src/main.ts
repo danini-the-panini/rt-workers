@@ -6,6 +6,9 @@ import Camera from './Camera'
 import Vec3 from './Vec3'
 import HittableList from './HittableList'
 import Sphere from './Sphere'
+import Lambertian from './Lambertian'
+import Color from './Color'
+import Metal from './Metal'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -15,16 +18,23 @@ const progress = document.getElementById('progress') as HTMLProgressElement
 const width = canvas.width
 const height = canvas.height
 
-const camera = new Camera(width, height, { samplesPerPixel: 100, maxDepth: 50 })
-
-const world = new HittableList()
-world.add(new Sphere(new Vec3(0,0,-1), 0.5))
-world.add(new Sphere(new Vec3(0,-100.5,-1), 100))
-
-const imageByteSize = width * height * 4
-
 progress.max = height
 
+const world = new HittableList()
+
+const materialGround = new Lambertian(new Color(0.8, 0.8, 0.0))
+const materialCenter = new Lambertian(new Color(0.7, 0.3, 0.3))
+const materialLeft = new Metal(new Color(0.8, 0.8, 0.8))
+const materialRight = new Metal(new Color(0.8, 0.6, 0.2))
+
+world.add(new Sphere(new Vec3( 0.0, -100.5, -1.0), 100.0, materialGround))
+world.add(new Sphere(new Vec3( 0.0,    0.0, -1.0),   0.5, materialCenter))
+world.add(new Sphere(new Vec3(-1.0,    0.0, -1.0),   0.5, materialLeft))
+world.add(new Sphere(new Vec3( 1.0,    0.0, -1.0),   0.5, materialRight))
+
+const camera = new Camera(width, height, { samplesPerPixel: 100, maxDepth: 50 })
+
+const imageByteSize = width * height * 4
 const buffer = new SharedArrayBuffer(imageByteSize)
 
 const cpus = navigator.hardwareConcurrency
