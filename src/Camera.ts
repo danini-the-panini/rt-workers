@@ -3,13 +3,15 @@ import IHittable from "./IHittable";
 import Interval from "./Interval";
 import Ray from "./Ray";
 import Vec3 from "./Vec3";
+import { rand } from "./util";
 import writeColor from "./writeColor";
 
 type CameraOptions = {
   focalLength?: number,
   height?: number,
   center?: Vec3,
-  samplesPerPixel?: number
+  samplesPerPixel?: number,
+  maxDepth?: number
 }
 
 export default class Camera {
@@ -22,6 +24,7 @@ export default class Camera {
   height: number
   center: Vec3
   samplesPerPixel: number
+  maxDepth: number
 
   constructor(
     public imageWidth: number,
@@ -30,13 +33,15 @@ export default class Camera {
       focalLength = 1.0,
       height = 2.0,
       center = new Vec3(0, 0, 0),
-      samplesPerPixel = 10
+      samplesPerPixel = 10,
+      maxDepth = 10
     } : CameraOptions = {}
   ) {
     this.focalLength = focalLength
     this.height = height
     this.center = center
     this.samplesPerPixel = samplesPerPixel
+    this.maxDepth = maxDepth
 
     this.width = this.height * (this.imageWidth / this.imageHeight)
 
@@ -64,10 +69,14 @@ export default class Camera {
     }
   }
 
-  rayColor(r: Ray, world: IHittable): Vec3 {
-    let rec = world.hit(r, new Interval(0, Infinity))
+  rayColor(r: Ray, world: IHittable, depth = this.maxDepth): Vec3 {
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0) return new Color(0,0,0)
+
+    let rec = world.hit(r, new Interval(0.001, Infinity))
     if (rec) {
-      return rec.normal.plus(new Color(1,1,1)).scale(0.5)
+      const direction = Vec3.randomUnitVector().add(rec.normal)
+      return this.rayColor(new Ray(rec.p, direction), world, depth-1).scale(0.5)
     }
   
     const unitDirection = r.direction.unit
@@ -90,8 +99,8 @@ export default class Camera {
   pixelSampleSquare() {
     // Returns a random point in the square surrounding a pixel at the origin.
 
-    const px = -0.5 + Math.random()
-    const py = -0.5 + Math.random()
+    const px = -0.5 + rand()
+    const py = -0.5 + rand()
     return this.deltaU.times(px).add(this.deltaV.times(py))
   }
 
@@ -102,7 +111,8 @@ export default class Camera {
       focalLength: this.focalLength,
       height: this.height,
       center: this.center.serialize,
-      samplesPerPixel: this.samplesPerPixel
+      samplesPerPixel: this.samplesPerPixel,
+      maxDepth: this.maxDepth
     }
   }
 
@@ -112,8 +122,9 @@ export default class Camera {
     focalLength,
     height,
     center,
-    samplesPerPixel
+    samplesPerPixel,
+    maxDepth
   }: typeof Camera.prototype.serialize) {
-    return new Camera(imageWidth, imageHeight, { focalLength, height, center: Vec3.deserialize(center), samplesPerPixel })
+    return new Camera(imageWidth, imageHeight, { focalLength, height, center: Vec3.deserialize(center), samplesPerPixel, maxDepth })
   }
 }

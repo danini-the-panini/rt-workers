@@ -1,3 +1,5 @@
+import { rand } from "./util"
+
 export default class Vec3 {
   e: [number, number, number]
 
@@ -85,6 +87,30 @@ export default class Vec3 {
       this.z * v.x - this.x * v.z,
       this.x * v.y - this.y * v.x
     )
+  }
+
+  static random(min: number = 0, max: number = 1) {
+    return new Vec3(rand(min, max), rand(min, max), rand(min, max))
+  }
+
+  static randomInUnitSphere() {
+    while (true) {
+      const p = this.random(-1, 1)
+      if (p.lengthSquared < 1) return p
+    }
+  }
+
+  static randomUnitVector() {
+    return this.randomInUnitSphere().unit
+  }
+
+  static randomOnHemisphere(normal: Vec3) {
+    const onUnitSphere = this.randomUnitVector()
+    if (onUnitSphere.dot(normal) > 0.0) { // In the same hemisphere as the normal
+      return onUnitSphere
+    } else {
+      return onUnitSphere.neg
+    }
   }
 
   get serialize() {
