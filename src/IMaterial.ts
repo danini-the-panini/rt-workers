@@ -1,9 +1,9 @@
-import Color from "./Color";
 import { HitRecord } from "./IHittable";
 import Ray from "./Ray";
+import Vec3 from "./Vec3";
 
 export type Scatter = {
-  attenuation: Color,
+  attenuation: Vec3,
   scattered: Ray
 }
 

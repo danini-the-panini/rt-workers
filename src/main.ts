@@ -10,6 +10,8 @@ import Lambertian from './Lambertian'
 import Color from './Color'
 import Metal from './Metal'
 import Dialectric from './Dialectric'
+import { rand } from './util'
+import IMaterial from './IMaterial'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -23,26 +25,55 @@ progress.max = height
 
 const world = new HittableList()
 
-const materialGround = new Lambertian(new Color(0.8, 0.8, 0.0))
-const materialCenter = new Lambertian(new Color(0.1, 0.2, 0.5))
-const materialLeft = new Dialectric(1.5)
-const materialRight = new Metal(new Color(0.8, 0.6, 0.2), 0.0)
+const groundMaterial = new Lambertian(new Color(0.5, 0.5, 0.5))
+world.add(new Sphere(new Vec3(0, -1000, 0), 1000, groundMaterial))
 
-world.add(new Sphere(new Vec3( 0.0, -100.5, -1.0), 100.0, materialGround))
-world.add(new Sphere(new Vec3( 0.0,    0.0, -1.0),   0.5, materialCenter))
-world.add(new Sphere(new Vec3(-1.0,    0.0, -1.0),   0.5, materialLeft))
-world.add(new Sphere(new Vec3(-1.0,    0.0, -1.0),  -0.4, materialLeft))
-world.add(new Sphere(new Vec3( 1.0,    0.0, -1.0),   0.5, materialRight))
+for (let a = -11; a < 11; a++) {
+  for (let b = -11; b < 11; b++) {
+    const chooseMat = rand()
+    const center = new Vec3(a + 0.9*rand(), 0.2, b + 0.9*rand())
+
+    if (center.minus(new Vec3(4, 0.2, 0)).length > 0.9) {
+      let sphereMaterial: IMaterial
+
+      if (chooseMat < 0.8) {
+        // diffuse
+        const albedo = Color.random().timesV(Color.random())
+        sphereMaterial = new Lambertian(albedo)
+        world.add(new Sphere(center, 0.2, sphereMaterial))
+      } else if (chooseMat < 0.95) {
+        // metal
+        const albedo = Color.random(0.5, 1)
+        const fuzz = rand(0, 0.5)
+        sphereMaterial = new Metal(albedo, fuzz)
+      } else {
+        // glass
+        sphereMaterial = new Dialectric(1.5)
+      }
+      
+      world.add(new Sphere(center, 0.2, sphereMaterial))
+    }
+  }
+}
+
+const material1 = new Dialectric(1.5)
+world.add(new Sphere(new Vec3(0, 1, 0), 1.0, material1))
+
+const material2 = new Lambertian(new Color(0.4, 0.2, 0.1))
+world.add(new Sphere(new Vec3(-4, 1, 0), 1.0, material2))
+
+const material3 = new Metal(new Color(0.7, 0.6, 0.5), 0.0)
+world.add(new Sphere(new Vec3(4, 1, 0), 1.0, material3))
 
 const camera = new Camera(
   width, height,
-  new Vec3(-2,2,1), new Vec3(0,0,-1), new Vec3(0,1,0),
+  new Vec3(13,2,3), new Vec3(0,0,0), new Vec3(0,1,0),
   {
     vfov: 20,
-    samplesPerPixel: 100,
+    samplesPerPixel: 4,
     maxDepth: 50,
-    defocusAngle: 10,
-    focusDist: 3.4
+    defocusAngle: 0.6,
+    focusDist: 10.0
   }
 )
 
