@@ -10,46 +10,56 @@ type CameraOptions = {
   center?: Vec3,
   samplesPerPixel?: number,
   maxDepth?: number,
-  vfov?: number
+  vfov?: number,
+  defocusAngle?: number,
+  focusDist?: number
 }
 
 export default class Camera {
-  deltaU: Vec3
-  deltaV: Vec3
-  upperLeft: Vec3
-  pixelZero: Vec3
+  deltaU: Vec3    // Offset to pixel to the right
+  deltaV: Vec3    // Offset to pixel below
+  pixelZero: Vec3 // Location of pixel 0, 0
+  center: Vec3    // Camera center
+  defocusU: Vec3  // Defocus disk horizontal radius
+  defocusV: Vec3  // Defocus disk vertical radius
   samplesPerPixel: number
   maxDepth: number
   vfov: number
-  center: Vec3
+  defocusAngle: number
+  focusDist: number
+  
+  // Camera frame basis vectors
   u: Vec3
   v: Vec3
   w: Vec3
 
   constructor(
-    public imageWidth: number,
-    public imageHeight: number,
-    public lookFrom: Vec3,
-    public lookAt: Vec3,
-    public vup: Vec3,
+    public imageWidth: number,            // Rendered image width in pixel count
+    public imageHeight: number,           // Rendered image height in pixel count
+    public lookFrom = new Vec3(0, 0, -1), // Point camera is looking from
+    public lookAt = new Vec3(0, 0, 0),    // Point camera is looking at
+    public vup = new Vec3(0, 1, 0),       // Camera-relative "up" direction
     {
-      samplesPerPixel = 10,
-      maxDepth = 10,
-      vfov = 90
+      samplesPerPixel = 10, // Count of random samples for each pixel
+      maxDepth = 10,        // Maximum number of ray bounces into scene
+      vfov = 90,            // Vertical view angle (field of view)
+      defocusAngle = 0,     // Variation angle of rays through each pixel
+      focusDist = 10        // Distance from camera lookfrom point to plane of perfect focus
     } : CameraOptions = {}
   ) {
     this.samplesPerPixel = samplesPerPixel
     this.maxDepth = maxDepth
     this.vfov = vfov
     this.center = lookFrom
+    this.defocusAngle = defocusAngle
+    this.focusDist = focusDist
 
     const look = lookFrom.minus(lookAt)
     
     // Determine viewport dimensions.
-    const focalLength = look.length
     const theta = degToRad(vfov)
     const h = Math.tan(theta/2)
-    const height = 2 * h * focalLength
+    const height = 2 * h * focusDist
     const width = height * (this.imageWidth / this.imageHeight)
 
     // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
@@ -57,14 +67,22 @@ export default class Camera {
     this.u = this.vup.cross(this.w).unit
     this.v = this.w.cross(this.u)
 
-    const u = this.u.times(width)
-    const v = this.v.neg.scale(height)
+    // Calculate the vectors across the horizontal and down the vertical viewport edges.
+    const viewportU = this.u.times(width)      // Vector across viewport horizontal edge
+    const viewportV = this.v.neg.scale(height) // Vector down viewport vertical edge
     
-    this.deltaU = u.div(this.imageWidth)
-    this.deltaV = v.div(this.imageHeight)
+    // Calculate the horizontal and vertical delta vectors to the next pixel.
+    this.deltaU = viewportU.div(this.imageWidth)
+    this.deltaV = viewportV.div(this.imageHeight)
 
-    this.upperLeft = this.center.minus(this.w.times(focalLength)).sub(u.shrink(2)).sub(v.shrink(2))
-    this.pixelZero = this.upperLeft.plus(this.deltaU.plus(this.deltaV).scale(0.5))
+    // Calculate the location of the upper left pixel.
+    const upperLeft = this.center.minus(this.w.times(focusDist)).sub(viewportU.shrink(2)).sub(viewportV.shrink(2))
+    this.pixelZero = upperLeft.plus(this.deltaU.plus(this.deltaV).scale(0.5))
+
+    // Calculate the camera defocus disk basis vectors.
+    const defocusRadius = focusDist * Math.tan(degToRad(defocusAngle / 2))
+    this.defocusU = this.u.times(defocusRadius)
+    this.defocusV = this.v.times(defocusRadius)
   }
 
   render(world: IHittable, buffer: SharedArrayBuffer, y: number) {
@@ -99,15 +117,16 @@ export default class Camera {
   }
 
   getRay(x: number, y: number) {
-    // Get a randomly sampled camera ray for the pixel at location x,y.
+    // Get a randomly-sampled camera ray for the pixel at location x,y, originating from
+    // the camera defocus disk.
 
     const pixelCenter = this.pixelZero.plus(this.deltaU.times(x)).add(this.deltaV.times(y))
     const pixelSample = pixelCenter.add(this.pixelSampleSquare())
 
-    return new Ray(
-      this.center,
-      pixelSample.sub(this.center)
-    )
+    const rayOrigin = (this.defocusAngle <= 0) ? this.center : this.defocusDiskSample()
+    const rayDirection = pixelSample.sub(rayOrigin)
+
+    return new Ray(rayOrigin, rayDirection)
   }
 
   pixelSampleSquare() {
@@ -116,6 +135,12 @@ export default class Camera {
     const px = -0.5 + rand()
     const py = -0.5 + rand()
     return this.deltaU.times(px).add(this.deltaV.times(py))
+  }
+
+  defocusDiskSample() {
+    // Returns a random point in the camera defocus disk.
+    const p = Vec3.randomInUnitDisk()
+    return this.center.plus(this.defocusU.times(p.x)).add(this.defocusV.times(p.y))
   }
 
   get serialize() {
@@ -127,7 +152,9 @@ export default class Camera {
       vup: this.vup.serialize,
       samplesPerPixel: this.samplesPerPixel,
       maxDepth: this.maxDepth,
-      vfov: this.vfov
+      vfov: this.vfov,
+      defocusAngle: this.defocusAngle,
+      focusDist: this.focusDist
     }
   }
 
@@ -139,12 +166,14 @@ export default class Camera {
     vup,
     samplesPerPixel,
     maxDepth,
-    vfov
+    vfov,
+    defocusAngle,
+    focusDist
   }: typeof Camera.prototype.serialize) {
     return new Camera(
       imageWidth, imageHeight,
       Vec3.deserialize(lookFrom), Vec3.deserialize(lookAt), Vec3.deserialize(vup),
-      { samplesPerPixel, maxDepth, vfov }
+      { samplesPerPixel, maxDepth, vfov, defocusAngle, focusDist }
     )
   }
 }

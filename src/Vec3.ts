@@ -141,6 +141,13 @@ export default class Vec3 {
     }
   }
 
+  static randomInUnitDisk() {
+    while (true) {
+      let p = new Vec3(rand(-1,1), rand(-1,1), 0)
+      if (p.lengthSquared < 1) return p
+    }
+  }
+
   get serialize() {
     return this.e
   }

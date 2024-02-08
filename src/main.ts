@@ -23,8 +23,6 @@ progress.max = height
 
 const world = new HittableList()
 
-const R = Math.cos(Math.PI/4)
-
 const materialGround = new Lambertian(new Color(0.8, 0.8, 0.0))
 const materialCenter = new Lambertian(new Color(0.1, 0.2, 0.5))
 const materialLeft = new Dialectric(1.5)
@@ -39,7 +37,13 @@ world.add(new Sphere(new Vec3( 1.0,    0.0, -1.0),   0.5, materialRight))
 const camera = new Camera(
   width, height,
   new Vec3(-2,2,1), new Vec3(0,0,-1), new Vec3(0,1,0),
-  { samplesPerPixel: 100, maxDepth: 50 }
+  {
+    vfov: 20,
+    samplesPerPixel: 100,
+    maxDepth: 50,
+    defocusAngle: 10,
+    focusDist: 3.4
+  }
 )
 
 const imageByteSize = width * height * 4
