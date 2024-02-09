@@ -125,8 +125,9 @@ export default class Camera {
 
     const rayOrigin = (this.defocusAngle <= 0) ? this.center : this.defocusDiskSample()
     const rayDirection = pixelSample.sub(rayOrigin)
+    const rayTime = rand()
 
-    return new Ray(rayOrigin, rayDirection)
+    return new Ray(rayOrigin, rayDirection, rayTime)
   }
 
   pixelSampleSquare() {

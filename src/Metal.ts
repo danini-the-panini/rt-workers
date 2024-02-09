@@ -9,7 +9,7 @@ export default class Metal implements IMaterial {
   scatter(rIn: Ray, rec: HitRecord): Scatter | null {
     const reflected = rIn.direction.unit.reflect(rec.normal)
     return {
-      scattered: new Ray(rec.p, reflected.add(Vec3.randomUnitVector().scale(this.fuzz))),
+      scattered: new Ray(rec.p, reflected.add(Vec3.randomUnitVector().scale(this.fuzz)), rIn.time),
       attenuation: this.albedo
     }
   }

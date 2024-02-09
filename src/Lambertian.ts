@@ -6,7 +6,7 @@ import Vec3 from "./Vec3";
 export default class Lambertian implements IMaterial {
   constructor(public albedo: Vec3) {}
 
-  scatter(_rIn: Ray, rec: HitRecord): Scatter | null {
+  scatter(rIn: Ray, rec: HitRecord): Scatter | null {
     let scatterDirection = Vec3.randomUnitVector().add(rec.normal)
 
     // Catch degenerate scatter direction
@@ -15,7 +15,7 @@ export default class Lambertian implements IMaterial {
     }
 
     return {
-      scattered: new Ray(rec.p, scatterDirection),
+      scattered: new Ray(rec.p, scatterDirection, rIn.time),
       attenuation: this.albedo
     }
   }

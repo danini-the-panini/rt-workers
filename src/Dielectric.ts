@@ -5,7 +5,7 @@ import Ray from "./Ray";
 import Vec3 from "./Vec3";
 import { rand } from "./util";
 
-export default class Dialectric implements IMaterial {
+export default class Dielectric implements IMaterial {
   constructor(public indexOfRefraction: number) {}
 
   scatter(rIn: Ray, rec: HitRecord): Scatter | null {
@@ -19,14 +19,14 @@ export default class Dialectric implements IMaterial {
     const cannotRefract = refractionRatio * sinTheta > 1.0
     let direction : Vec3
 
-    if (cannotRefract || Dialectric.reflectance(cosTheta, refractionRatio) > rand()) {
+    if (cannotRefract || Dielectric.reflectance(cosTheta, refractionRatio) > rand()) {
       direction = unitDirection.reflect(rec.normal)
     } else {
       direction = unitDirection.refract(rec.normal, refractionRatio)
     }
 
     return {
-      scattered: new Ray(rec.p, direction),
+      scattered: new Ray(rec.p, direction, rIn.time),
       attenuation
     }
   }
@@ -45,7 +45,7 @@ export default class Dialectric implements IMaterial {
     }
   }
 
-  static deserialize({ indexOfRefraction }: typeof Dialectric.prototype.serialize) {
-    return new Dialectric(indexOfRefraction)
+  static deserialize({ indexOfRefraction }: typeof Dielectric.prototype.serialize) {
+    return new Dielectric(indexOfRefraction)
   }
 }
