@@ -1,3 +1,4 @@
+import BVHNode from "./BVHNode"
 import Dielectric from "./Dielectric"
 import HittableList from "./HittableList"
 import IHittable from "./IHittable"
@@ -7,6 +8,7 @@ import Metal from "./Metal"
 import Sphere from "./Sphere"
 
 export type HittableData =
+  typeof BVHNode.prototype.serialize |
   typeof HittableList.prototype.serialize |
   typeof Sphere.prototype.serialize
 
@@ -17,6 +19,7 @@ export type MaterialData =
 
 export function deserializeHittable(data: HittableData): IHittable {
   switch (data.type) {
+    case 'bvh': return BVHNode.deserialize(data)
     case 'list': return HittableList.deserialize(data)
     case 'sphere': return Sphere.deserialize(data)
   }

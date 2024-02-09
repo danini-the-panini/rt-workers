@@ -1,3 +1,4 @@
+import AABB from "./AABB";
 import IHittable, { HitRecord } from "./IHittable";
 import IMaterial from "./IMaterial";
 import Interval from "./Interval";
@@ -26,17 +27,27 @@ export default class Sphere implements IHittable {
   material: IMaterial
   centerVec: Vec3 = new Vec3()
   isMoving: boolean = false
+  boundingBox: AABB
 
   constructor(options: SphereOptions) {
+    this.radius = options.radius
+    this.material = options.material
+
     if ('center' in options) {
       this.center1 = options.center
+
+      const rvec = new Vec3(this.radius, this.radius, this.radius)
+      this.boundingBox = AABB.fromPoints(this.center1.minus(rvec), this.center1.plus(rvec))
     } else {
       this.center1 = options.center1
       this.centerVec = options.center2.sub(options.center1)
       this.isMoving = true
+
+      const rvec = new Vec3(this.radius, this.radius, this.radius)
+      const box1 = AABB.fromPoints(this.center1.minus(rvec), this.center1.plus(rvec))
+      const box2 = AABB.fromPoints(options.center2.minus(rvec), options.center2.plus(rvec))
+      this.boundingBox = AABB.fromBoxes(box1, box2)
     }
-    this.radius = options.radius
-    this.material = options.material
   }
 
   hit(r: Ray, rayT: Interval): HitRecord | null {

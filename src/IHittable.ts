@@ -1,3 +1,4 @@
+import AABB from "./AABB"
 import IMaterial from "./IMaterial"
 import Interval from "./Interval"
 import Ray from "./Ray"
@@ -17,5 +18,6 @@ export class HitRecord {
 
 export default interface IHittable {
   hit(r: Ray, rayT: Interval): HitRecord | null
+  boundingBox: AABB
   serialize: any
 }

@@ -1,10 +1,16 @@
+import AABB from "./AABB";
 import IHittable, { HitRecord } from "./IHittable";
 import Interval from "./Interval";
 import Ray from "./Ray";
 import { deserializeHittable } from "./deserialize";
 
 export default class HittableList implements IHittable {
-  constructor(public objects: IHittable[] = []) {}
+  objects: IHittable[] = []
+  boundingBox: AABB = new AABB
+
+  constructor(objects: IHittable[] = []) {
+    objects.forEach(this.add.bind(this))
+  }
 
   clear() {
     this.objects = []
@@ -12,6 +18,7 @@ export default class HittableList implements IHittable {
 
   add(object: IHittable) {
     this.objects.push(object)
+    this.boundingBox = AABB.fromBoxes(this.boundingBox, object.boundingBox)
   }
 
   hit(r: Ray, rayT: Interval): HitRecord | null {

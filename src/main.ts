@@ -12,6 +12,7 @@ import Metal from './Metal'
 import Dielectric from './Dielectric'
 import { rand } from './util'
 import IMaterial from './IMaterial'
+import BVHNode from './BVHNode'
 
 const canvas = document.getElementById('canvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')!
@@ -23,10 +24,10 @@ const height = canvas.height
 
 progress.max = height
 
-const world = new HittableList()
+const baseWorld = new HittableList()
 
 const groundMaterial = new Lambertian(new Color(0.5, 0.5, 0.5))
-world.add(new Sphere({ center: new Vec3(0, -1000, 0), radius: 1000, material: groundMaterial }))
+baseWorld.add(new Sphere({ center: new Vec3(0, -1000, 0), radius: 1000, material: groundMaterial }))
 
 for (let a = -11; a < 11; a++) {
   for (let b = -11; b < 11; b++) {
@@ -41,30 +42,32 @@ for (let a = -11; a < 11; a++) {
         const albedo = Color.random().timesV(Color.random())
         sphereMaterial = new Lambertian(albedo)
         const center2 = center.plus(new Vec3(0, rand(0, 0.5), 0))
-        world.add(new Sphere({ center1: center, center2, radius: 0.2, material: sphereMaterial }))
+        baseWorld.add(new Sphere({ center1: center, center2, radius: 0.2, material: sphereMaterial }))
       } else if (chooseMat < 0.95) {
         // metal
         const albedo = Color.random(0.5, 1)
         const fuzz = rand(0, 0.5)
         sphereMaterial = new Metal(albedo, fuzz)
-        world.add(new Sphere({ center, radius: 0.2, material: sphereMaterial }))
+        baseWorld.add(new Sphere({ center, radius: 0.2, material: sphereMaterial }))
       } else {
         // glass
         sphereMaterial = new Dielectric(1.5)
-        world.add(new Sphere({ center, radius: 0.2, material: sphereMaterial }))
+        baseWorld.add(new Sphere({ center, radius: 0.2, material: sphereMaterial }))
       }
     }
   }
 }
 
 const material1 = new Dielectric(1.5)
-world.add(new Sphere({ center: new Vec3(0, 1, 0), radius: 1.0, material: material1 }))
+baseWorld.add(new Sphere({ center: new Vec3(0, 1, 0), radius: 1.0, material: material1 }))
 
 const material2 = new Lambertian(new Color(0.4, 0.2, 0.1))
-world.add(new Sphere({ center: new Vec3(-4, 1, 0), radius: 1.0, material: material2 }))
+baseWorld.add(new Sphere({ center: new Vec3(-4, 1, 0), radius: 1.0, material: material2 }))
 
 const material3 = new Metal(new Color(0.7, 0.6, 0.5), 0.0)
-world.add(new Sphere({ center: new Vec3(4, 1, 0), radius: 1.0, material: material3 }))
+baseWorld.add(new Sphere({ center: new Vec3(4, 1, 0), radius: 1.0, material: material3 }))
+
+const world = new BVHNode(baseWorld.objects)
 
 const camera = new Camera(
   width, height,
